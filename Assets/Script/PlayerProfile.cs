@@ -9,10 +9,42 @@ public class PlayerProfile : MonoBehaviour
 
     void Start()
     {
-        string playerName = PlayerPrefs.GetString("PlayerName", "Player");
-        nameText.text = playerName;
+        SaveManager saveManager = SaveManager.Instance;
 
-        int colorIndex = PlayerPrefs.GetInt("PlayerColor", 0);
-        GetComponent<Renderer>().material.color = colors[colorIndex];
+        if (saveManager == null || saveManager.Data == null)
+        {
+            Debug.LogError("SaveManager data is not available.", this);
+            return;
+        }
+
+        string playerName = saveManager.Data.playerName;
+
+        if (string.IsNullOrEmpty(playerName))
+            playerName = "Player";
+
+        if (nameText != null)
+            nameText.text = playerName;
+
+        if (colors == null || colors.Length == 0)
+        {
+            Debug.LogError("No player colors are configured.", this);
+            return;
+        }
+
+        int colorIndex = Mathf.Clamp(
+            saveManager.Data.playerColor,
+            0,
+            colors.Length - 1
+        );
+
+        Renderer playerRenderer = GetComponent<Renderer>();
+
+        if (playerRenderer == null)
+        {
+            Debug.LogError("Renderer is missing.", this);
+            return;
+        }
+
+        playerRenderer.material.color = colors[colorIndex];
     }
 }

@@ -170,5 +170,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b692bf3485a2d41c0ba0e3e025f7e424, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hazard
-  fallSpeed: 3
-  damage: 1
+  stats: {fileID: 11400000, guid: df68a9740b641488ebde5c39e9355d64, type: 2}

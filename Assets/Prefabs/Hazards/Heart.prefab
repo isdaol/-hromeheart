@@ -171,8 +171,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 268277aade58848eaa6a02bcc84160b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HeartHazard
-  fallSpeed: 3
-  damage: 1
+  stats: {fileID: 11400000, guid: 79761d5203a9540e89612b644d4ab5dd, type: 2}
   healAmount: 1
   collectSound: {fileID: 8300000, guid: 85946d9c78b40435a98f80900cbc8644, type: 3}
   soundVolume: 1

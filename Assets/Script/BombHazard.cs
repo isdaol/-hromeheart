@@ -1,26 +1,26 @@
-
 using UnityEngine;
 
 public class BombHazard : Hazard
 {
-    public float explosionDelay = 2f;
-    public float explosionRadius = 1.5f;
-    public int explosionDamage = 1;
-
     private bool hasLanded;
     private Rigidbody2D rb;
 
     protected override void Start()
     {
+        if (stats == null)
+        {
+            Debug.LogError("HazardStats is not assigned.", this);
+            enabled = false;
+            return;
+        }
+
         rb = GetComponent<Rigidbody2D>();
 
         if (rb != null)
-        {
             rb.gravityScale = 1f;
-        }
     }
 
-    void OnCollisionEnter2D(Collision2D collision)
+    protected override void OnCollisionEnter2D(Collision2D collision)
     {
         if (hasLanded)
             return;
@@ -35,7 +35,7 @@ public class BombHazard : Hazard
                 rb.bodyType = RigidbodyType2D.Kinematic;
             }
 
-            Invoke(nameof(Explode), explosionDelay);
+            Invoke(nameof(Explode), stats.explosionDelay);
         }
     }
 
@@ -45,7 +45,7 @@ public class BombHazard : Hazard
 
         Collider2D[] hits = Physics2D.OverlapCircleAll(
             transform.position,
-            explosionRadius
+            stats.explosionRadius
         );
 
         foreach (Collider2D hit in hits)
@@ -55,9 +55,7 @@ public class BombHazard : Hazard
                 Health health = hit.GetComponent<Health>();
 
                 if (health != null)
-                {
-                    health.TakeDamage(explosionDamage);
-                }
+                    health.TakeDamage(stats.explosionDamage);
             }
         }
 

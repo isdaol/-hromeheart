@@ -7,3 +7,9 @@
 - 2026-11-11 I tested the level with two players; the first completed it in three attempts and the second in two.
 - 2026-11-11 After the test, I changed the Charger wind-up from 1.0 to 0.5 seconds and the Shooter cooldown from 2.0 to 1.6 seconds, shortening the warning and the time between shots.
 - 2026-11-11 I kept the enemy implementation and Level 4 changes in two commits, then merged the branch into `main` so this week's work is visible together.
+## Week 12 — Assignment 11
+
+- 2026-11-16 I moved player, projectile, hazard, boss, and Level 4 enemy balance values into ScriptableObject assets so I can tune them without editing gameplay code.
+- 2026-11-16 I kept the survival timer on Level 2; the other levels use coin collection as their goal.
+- 2026-11-16 I tested a malformed save file. The game loaded default data without crashing and wrote a new save.json.
+- 2026-11-16 After returning to the main menu, ResetButton could target a destroyed duplicate SaveManager. I changed it to use SaveManager.Instance through MenuButtons and confirmed the reset works.
