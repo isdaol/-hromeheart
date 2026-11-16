@@ -1,4 +1,3 @@
-
 using UnityEngine;
 
 [RequireComponent(typeof(Animator))]
@@ -16,18 +15,11 @@ public class Shooter : MonoBehaviour
     public Transform player;
     public Transform firePoint;
     public GameObject projectilePrefab;
-
-    [Header("Detection")]
-    public float detectionRange = 8f;
-    [Range(0f, 180f)]
-    public float viewAngle = 140f;
     public LayerMask visionMask;
 
-    [Header("Shooting")]
-    [Range(0.3f, 0.8f)] public float aimTime = 0.6f;
-    public float cooldown = 1.6f;
-    public float shootAnimationTime = 0.75f;
-    public float projectileSpeed = 8f;
+    [Header("Data")]
+    [SerializeField] private ShooterStats stats;
+    [SerializeField] private ProjectileStats projectileStats;
 
     private Animator animator;
     private SpriteRenderer spriteRenderer;
@@ -46,6 +38,23 @@ public class Shooter : MonoBehaviour
 
     void Start()
     {
+        if (stats == null)
+        {
+            Debug.LogError("ShooterStats is not assigned.", this);
+            enabled = false;
+            return;
+        }
+
+        if (projectileStats == null)
+        {
+            Debug.LogError(
+                "ProjectileStats is not assigned to Shooter.",
+                this
+            );
+            enabled = false;
+            return;
+        }
+
         animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
@@ -73,14 +82,12 @@ public class Shooter : MonoBehaviour
         switch (currentState)
         {
             case State.Idle:
-
                 if (targetVisible && IsOnScreen())
                     StartAiming();
 
                 break;
 
             case State.Aim:
-
                 if (!targetVisible || !IsOnScreen())
                 {
                     ReturnToIdle();
@@ -88,7 +95,6 @@ public class Shooter : MonoBehaviour
                 }
 
                 FacePlayer();
-
                 aimTimer -= Time.deltaTime;
 
                 if (aimTimer <= 0f &&
@@ -100,7 +106,6 @@ public class Shooter : MonoBehaviour
                 break;
 
             case State.Shoot:
-
                 shootTimer -= Time.deltaTime;
 
                 if (shootTimer <= 0f)
@@ -128,19 +133,18 @@ public class Shooter : MonoBehaviour
 
         float distance = direction.magnitude;
 
-        if (distance > detectionRange)
+        if (distance > stats.detectionRange)
             return false;
 
         direction.Normalize();
 
-        // Проверяем угол в обе стороны по горизонтали.
         float horizontalAngle =
             Vector2.Angle(Vector2.right, direction);
 
         if (horizontalAngle > 90f)
             horizontalAngle = 180f - horizontalAngle;
 
-        if (horizontalAngle > viewAngle / 2f)
+        if (horizontalAngle > stats.viewAngle / 2f)
             return false;
 
         RaycastHit2D hit = Physics2D.Raycast(
@@ -157,7 +161,7 @@ public class Shooter : MonoBehaviour
     void StartAiming()
     {
         currentState = State.Aim;
-        aimTimer = aimTime;
+        aimTimer = stats.aimTime;
 
         FacePlayer();
     }
@@ -171,13 +175,13 @@ public class Shooter : MonoBehaviour
         }
 
         currentState = State.Shoot;
-        shootTimer = shootAnimationTime;
+        shootTimer = stats.shootAnimationTime;
 
         animator.SetTrigger("Shoot");
 
         FireProjectile();
 
-        nextShotTime = Time.time + cooldown;
+        nextShotTime = Time.time + stats.cooldown;
     }
 
     void FireProjectile()
@@ -209,7 +213,9 @@ public class Shooter : MonoBehaviour
         if (projectileRb != null)
         {
             projectileRb.linearVelocity =
-                Vector2.right * facingDirection * projectileSpeed;
+                Vector2.right *
+                facingDirection *
+                projectileStats.speed;
         }
     }
 
@@ -232,9 +238,7 @@ public class Shooter : MonoBehaviour
         if (firePoint != null)
         {
             Vector3 position = firePoint.localPosition;
-
             position.x = firePointX * facingDirection;
-
             firePoint.localPosition = position;
         }
     }
@@ -261,7 +265,13 @@ public class Shooter : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
+        if (stats == null)
+            return;
+
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, detectionRange);
+        Gizmos.DrawWireSphere(
+            transform.position,
+            stats.detectionRange
+        );
     }
 }

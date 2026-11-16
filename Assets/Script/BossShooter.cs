@@ -1,14 +1,25 @@
-
 using UnityEngine;
 
 public class BossShooter : MonoBehaviour
 {
+    [Header("Data")]
+    [SerializeField] private BossStats stats;
+
+    [Header("References")]
     public GameObject projectilePrefab;
     public Transform player;
     public Transform firePoint;
 
-    public float fireInterval = 2f;
     private float timer;
+
+    void Start()
+    {
+        if (stats == null)
+        {
+            Debug.LogError("BossStats is not assigned.", this);
+            enabled = false;
+        }
+    }
 
     void Update()
     {
@@ -17,7 +28,7 @@ public class BossShooter : MonoBehaviour
 
         timer += Time.deltaTime;
 
-        if (timer >= fireInterval)
+        if (timer >= stats.fireInterval)
         {
             Shoot();
             timer = 0f;

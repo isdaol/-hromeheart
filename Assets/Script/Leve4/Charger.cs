@@ -1,4 +1,3 @@
-
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -14,38 +13,15 @@ public class Charger : MonoBehaviour
         Cooldown
     }
 
+    [Header("Stats")]
+    public ChargerStats stats;
+
     [Header("References")]
     public Transform player;
     public Transform homePoint;
 
     [Header("Detection")]
-    public float detectionRange = 7f;
-    [Range(0f, 180f)]
-    public float viewAngle = 60f;
     public LayerMask visionMask;
-
-    [Header("Attack")]
-    [Range(0.3f, 0.8f)] public float windUpTime = 0.5f;
-    public float chargeSpeed = 9f;
-    public float chargeDuration = 0.9f;
-    public float cooldownTime = 1.5f;
-    public int attackDamage = 1;
-
-    [Header("Return")]
-    public float returnSpeed = 2f;
-    public float returnDistance = 0.15f;
-
-    [Header("Idle Look")]
-    public float turnInterval = 3f;
-
-    [Header("Path Safety")]
-    [Min(0.01f)] public float groundPathSampleStep = 0.2f;
-    [Min(0f)] public float groundHeightTolerance = 0.45f;
-    [Min(0f)] public float groundLookAheadDistance = 0.65f;
-    [Min(0f)] public float edgeClearance = 0.1f;
-    [Min(0f)] public float collisionPadding = 0.05f;
-    [Min(0f)] public float minimumMovementThreshold = 0.01f;
-    [Range(0f, 1f)] public float wallNormalThreshold = 0.5f;
 
     private Rigidbody2D rb;
     private Animator animator;
@@ -64,6 +40,17 @@ public class Charger : MonoBehaviour
 
     void Start()
     {
+        if (stats == null)
+        {
+            Debug.LogError(
+                "Charger Stats не назначен. Перетащи Charger_Default в поле Stats.",
+                this
+            );
+
+            enabled = false;
+            return;
+        }
+
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -78,7 +65,8 @@ public class Charger : MonoBehaviour
         homePosition = homePoint != null
             ? (Vector2)homePoint.position
             : rb.position;
-        nextTurnTime = Time.time + turnInterval;
+
+        nextTurnTime = Time.time + stats.turnInterval;
     }
 
     void Update()
@@ -92,24 +80,23 @@ public class Charger : MonoBehaviour
                 player = playerObject.transform;
         }
 
-        if ((currentState == State.Idle || currentState == State.Cooldown) &&
+        if ((currentState == State.Idle ||
+             currentState == State.Cooldown) &&
             Time.time >= nextTurnTime)
         {
             FaceDirection(-facingDirection);
-            nextTurnTime = Time.time + turnInterval;
+            nextTurnTime = Time.time + stats.turnInterval;
         }
 
         switch (currentState)
         {
             case State.Idle:
-
                 if (CanSeePlayer() && IsOnScreen())
                     StartWindUp();
 
                 break;
 
             case State.WindUp:
-
                 if (!CanSeePlayer() || !IsOnScreen())
                 {
                     currentState = State.Idle;
@@ -117,7 +104,6 @@ public class Charger : MonoBehaviour
                 }
 
                 FacePlayer();
-
                 stateTimer -= Time.deltaTime;
 
                 if (stateTimer <= 0f)
@@ -131,7 +117,6 @@ public class Charger : MonoBehaviour
                 break;
 
             case State.Charge:
-
                 stateTimer -= Time.deltaTime;
 
                 if (stateTimer <= 0f)
@@ -140,11 +125,10 @@ public class Charger : MonoBehaviour
                 break;
 
             case State.Return:
-
                 float distance =
                     Vector2.Distance(rb.position, homePosition);
 
-                if (distance <= returnDistance)
+                if (distance <= stats.returnDistance)
                 {
                     rb.position = homePosition;
                     StartCooldown();
@@ -159,7 +143,6 @@ public class Charger : MonoBehaviour
                 break;
 
             case State.Cooldown:
-
                 stateTimer -= Time.deltaTime;
 
                 if (stateTimer <= 0f)
@@ -183,9 +166,14 @@ public class Charger : MonoBehaviour
 
         if (currentState == State.Charge)
         {
-            float chargeStep = chargeSpeed * Time.fixedDeltaTime;
+            float chargeStep =
+                stats.chargeSpeed * Time.fixedDeltaTime;
+
             if (!HasGroundAhead(chargeDirection.x) ||
-                IsBlockedInDirection(chargeDirection, chargeStep + collisionPadding))
+                IsBlockedInDirection(
+                    chargeDirection,
+                    chargeStep + stats.collisionPadding
+                ))
             {
                 rb.linearVelocity = Vector2.zero;
                 StartReturn();
@@ -193,17 +181,19 @@ public class Charger : MonoBehaviour
             }
 
             rb.linearVelocity =
-                chargeDirection * chargeSpeed;
+                chargeDirection * stats.chargeSpeed;
         }
         else if (currentState == State.Return)
         {
             Vector2 direction =
                 (homePosition - rb.position).normalized;
 
-            if (Mathf.Abs(direction.x) > minimumMovementThreshold &&
+            if (Mathf.Abs(direction.x) >
+                    stats.minimumMovementThreshold &&
                 IsBlockedInDirection(
                     new Vector2(Mathf.Sign(direction.x), 0f),
-                    returnSpeed * Time.fixedDeltaTime + collisionPadding
+                    stats.returnSpeed * Time.fixedDeltaTime +
+                    stats.collisionPadding
                 ))
             {
                 rb.linearVelocity = Vector2.zero;
@@ -212,8 +202,10 @@ public class Charger : MonoBehaviour
             }
 
             rb.linearVelocity =
-                new Vector2(direction.x * returnSpeed,
-                            rb.linearVelocity.y);
+                new Vector2(
+                    direction.x * stats.returnSpeed,
+                    rb.linearVelocity.y
+                );
         }
         else
         {
@@ -235,14 +227,17 @@ public class Charger : MonoBehaviour
         float distance =
             Vector2.Distance(origin, player.position);
 
-        if (distance > detectionRange)
+        if (distance > stats.detectionRange)
             return false;
 
         Vector2 facing =
             new Vector2(facingDirection, 0f);
 
-        if (Vector2.Angle(facing, direction) > viewAngle / 2f)
+        if (Vector2.Angle(facing, direction) >
+            stats.viewAngle / 2f)
+        {
             return false;
+        }
 
         RaycastHit2D[] hits = Physics2D.RaycastAll(
             origin,
@@ -279,30 +274,39 @@ public class Charger : MonoBehaviour
         if (bodyCollider == null || player == null)
             return true;
 
-        float horizontalDifference = player.position.x - rb.position.x;
+        float horizontalDifference =
+            player.position.x - rb.position.x;
+
         float direction = Mathf.Sign(horizontalDifference);
+
         float chargeDistance = Mathf.Min(
             Mathf.Abs(horizontalDifference),
-            chargeSpeed * chargeDuration
+            stats.chargeSpeed * stats.chargeDuration
         );
 
-        if (chargeDistance <= minimumMovementThreshold)
+        if (chargeDistance <= stats.minimumMovementThreshold)
             return HasGroundAtX(rb.position.x);
 
         if (!HasGroundAtX(rb.position.x))
             return false;
 
-        float leadingEdge = bodyCollider.bounds.extents.x + edgeClearance;
+        float leadingEdge =
+            bodyCollider.bounds.extents.x + stats.edgeClearance;
+
         for (float distance = Mathf.Min(leadingEdge, chargeDistance);
              distance <= chargeDistance;
-             distance += groundPathSampleStep)
+             distance += stats.groundPathSampleStep)
         {
-            float sampleX = rb.position.x + direction * distance;
+            float sampleX =
+                rb.position.x + direction * distance;
+
             if (!HasGroundAtX(sampleX))
                 return false;
         }
 
-        float targetX = rb.position.x + direction * chargeDistance;
+        float targetX =
+            rb.position.x + direction * chargeDistance;
+
         return HasGroundAtX(targetX);
     }
 
@@ -311,14 +315,19 @@ public class Charger : MonoBehaviour
         if (bodyCollider == null)
             return true;
 
-        float leadingEdge = bodyCollider.bounds.extents.x + edgeClearance;
-        float endDistance = leadingEdge + groundLookAheadDistance;
+        float leadingEdge =
+            bodyCollider.bounds.extents.x + stats.edgeClearance;
+
+        float endDistance =
+            leadingEdge + stats.groundLookAheadDistance;
 
         for (float distance = leadingEdge;
              distance <= endDistance;
-             distance += groundPathSampleStep)
+             distance += stats.groundPathSampleStep)
         {
-            float sampleX = rb.position.x + direction * distance;
+            float sampleX =
+                rb.position.x + direction * distance;
+
             if (!HasGroundAtX(sampleX))
                 return false;
         }
@@ -329,6 +338,7 @@ public class Charger : MonoBehaviour
     bool HasGroundAtX(float x)
     {
         float feetY = bodyCollider.bounds.min.y;
+
         Vector2 origin = new Vector2(
             x,
             bodyCollider.bounds.center.y
@@ -337,7 +347,8 @@ public class Charger : MonoBehaviour
         RaycastHit2D[] hits = Physics2D.RaycastAll(
             origin,
             Vector2.down,
-            bodyCollider.bounds.extents.y + groundHeightTolerance
+            bodyCollider.bounds.extents.y +
+            stats.groundHeightTolerance
         );
 
         foreach (RaycastHit2D hit in hits)
@@ -345,7 +356,8 @@ public class Charger : MonoBehaviour
             if (hit.collider != null &&
                 !hit.collider.isTrigger &&
                 hit.collider.CompareTag("Ground") &&
-                Mathf.Abs(hit.point.y - feetY) <= groundHeightTolerance)
+                Mathf.Abs(hit.point.y - feetY) <=
+                    stats.groundHeightTolerance)
             {
                 return true;
             }
@@ -356,10 +368,16 @@ public class Charger : MonoBehaviour
 
     bool IsBlockedInDirection(Vector2 direction, float distance)
     {
-        if (bodyCollider == null || direction.sqrMagnitude <= minimumMovementThreshold * minimumMovementThreshold)
+        if (bodyCollider == null ||
+            direction.sqrMagnitude <=
+                stats.minimumMovementThreshold *
+                stats.minimumMovementThreshold)
+        {
             return false;
+        }
 
         Bounds bounds = bodyCollider.bounds;
+
         RaycastHit2D[] hits = Physics2D.BoxCastAll(
             bounds.center,
             bounds.size,
@@ -370,15 +388,19 @@ public class Charger : MonoBehaviour
 
         foreach (RaycastHit2D hit in hits)
         {
-            if (hit.collider == null || hit.collider.isTrigger ||
+            if (hit.collider == null ||
+                hit.collider.isTrigger ||
                 hit.collider.transform.root == transform.root ||
                 hit.collider.transform.root.CompareTag("Player"))
             {
                 continue;
             }
 
-            if (Mathf.Abs(hit.normal.x) > wallNormalThreshold)
+            if (Mathf.Abs(hit.normal.x) >
+                stats.wallNormalThreshold)
+            {
                 return true;
+            }
         }
 
         return false;
@@ -387,7 +409,7 @@ public class Charger : MonoBehaviour
     void StartWindUp()
     {
         currentState = State.WindUp;
-        stateTimer = windUpTime;
+        stateTimer = stats.windUpTime;
 
         FacePlayer();
     }
@@ -395,7 +417,7 @@ public class Charger : MonoBehaviour
     void StartCharge()
     {
         currentState = State.Charge;
-        stateTimer = chargeDuration;
+        stateTimer = stats.chargeDuration;
         hasHitPlayerThisCharge = false;
 
         chargeDirection =
@@ -410,23 +432,30 @@ public class Charger : MonoBehaviour
     void StartCooldown()
     {
         currentState = State.Cooldown;
-        stateTimer = cooldownTime;
+        stateTimer = stats.cooldownTime;
     }
 
     void OnCollisionStay2D(Collision2D collision)
     {
-        if (currentState != State.Charge || hasHitPlayerThisCharge || !IsOnScreen())
+        if (currentState != State.Charge ||
+            hasHitPlayerThisCharge ||
+            !IsOnScreen())
+        {
             return;
+        }
 
         GameObject target = collision.gameObject;
+
         if (!target.CompareTag("Player"))
             return;
 
-        Health health = target.GetComponentInParent<Health>();
+        Health health =
+            target.GetComponentInParent<Health>();
+
         if (health == null)
             return;
 
-        health.TakeDamage(attackDamage);
+        health.TakeDamage(stats.attackDamage);
         hasHitPlayerThisCharge = true;
         StartReturn();
     }
@@ -462,7 +491,9 @@ public class Charger : MonoBehaviour
     void UpdateAnimator()
     {
         float speed =
-            currentState == State.Return ? returnSpeed : 0f;
+            currentState == State.Return
+                ? stats.returnSpeed
+                : 0f;
 
         animator.SetFloat("Speed", speed);
 
@@ -479,7 +510,13 @@ public class Charger : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
+        if (stats == null)
+            return;
+
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, detectionRange);
+        Gizmos.DrawWireSphere(
+            transform.position,
+            stats.detectionRange
+        );
     }
 }

@@ -170,5 +170,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c643a887190484234a081981ed6df6cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossProjectile
-  speed: 5
-  damage: 1
+  stats: {fileID: 11400000, guid: b4609e81b2a024594814e248bb4778c0, type: 2}

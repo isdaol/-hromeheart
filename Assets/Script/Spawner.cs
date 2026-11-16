@@ -1,29 +1,64 @@
-
 using UnityEngine;
 
 public class Spawner : MonoBehaviour
 {
-    [Header("Background")]
+    [Header("Scene Reference")]
     public SpriteRenderer background;
-    public float sidePadding = 0.5f;
-    public float topOffset = 0.5f;
 
-    [Header("Hazard Prefabs")]
-    public Hazard[] hazards;
-
-    [Header("Spawn Settings")]
-    public float spawnInterval = 2f;
+    [Header("Level Data")]
+    [SerializeField] private LevelData levelData;
 
     private float timer;
 
+    void Start()
+    {
+        if (levelData == null)
+        {
+            Debug.LogError("LevelData is not assigned to Spawner.", this);
+            enabled = false;
+            return;
+        }
+
+        if (!levelData.useSpawner)
+        {
+            enabled = false;
+            return;
+        }
+
+        if (background == null)
+        {
+            Debug.LogError("Background is not assigned to Spawner.", this);
+            enabled = false;
+            return;
+        }
+
+        if (levelData.hazards == null || levelData.hazards.Length == 0)
+        {
+            Debug.LogError("No hazard prefabs are assigned in LevelData.", this);
+            enabled = false;
+            return;
+        }
+
+        if (levelData.normalizedSpawnPoints == null ||
+            levelData.normalizedSpawnPoints.Length == 0)
+        {
+            Debug.LogError("No spawn points are assigned in LevelData.", this);
+            enabled = false;
+            return;
+        }
+
+        if (levelData.spawnInterval <= 0f)
+        {
+            Debug.LogError("Spawner interval must be greater than zero.", this);
+            enabled = false;
+        }
+    }
+
     void Update()
     {
-        if (background == null)
-            return;
-
         timer += Time.deltaTime;
 
-        if (timer >= spawnInterval)
+        if (timer >= levelData.spawnInterval)
         {
             SpawnHazard();
             timer = 0f;
@@ -32,40 +67,41 @@ public class Spawner : MonoBehaviour
 
     void SpawnHazard()
     {
-        if (hazards == null || hazards.Length == 0)
-        {
-            Debug.LogWarning("Assign Hazard prefabs in Spawner!");
-            return;
-        }
+        Bounds backgroundBounds = background.bounds;
 
-        Bounds bgBounds = background.bounds;
-
-        // Ограничения по бокам фона
-        float minX = bgBounds.min.x + sidePadding;
-        float maxX = bgBounds.max.x - sidePadding;
+        float minX = backgroundBounds.min.x + levelData.sidePadding;
+        float maxX = backgroundBounds.max.x - levelData.sidePadding;
 
         if (minX >= maxX)
         {
-            Debug.LogWarning("Background is too narrow for spawning!");
+            Debug.LogWarning("Background is too narrow for spawning.", this);
             return;
         }
 
-        int index = Random.Range(0, hazards.Length);
-        Hazard selectedHazard = hazards[index];
+        Hazard selectedHazard =
+            levelData.hazards[Random.Range(0, levelData.hazards.Length)];
 
         if (selectedHazard == null)
+        {
+            Debug.LogWarning("A hazard entry in LevelData is empty.", this);
             return;
+        }
 
-        // Высота появления относительно верхнего края фона
-        float spawnY = bgBounds.max.y - topOffset;
+        Vector2 spawnPoint = levelData.normalizedSpawnPoints[
+            Random.Range(0, levelData.normalizedSpawnPoints.Length)
+        ];
 
-        float randomX = Random.Range(minX, maxX);
+        float normalizedX = Mathf.Clamp01(spawnPoint.x);
+        float normalizedY = Mathf.Clamp01(spawnPoint.y);
 
-        Vector3 spawnPosition = new Vector3(
-            randomX,
-            spawnY,
-            0f
-        );
+        float spawnX = Mathf.Lerp(minX, maxX, normalizedX);
+        float spawnY = Mathf.Lerp(
+            backgroundBounds.min.y,
+            backgroundBounds.max.y,
+            normalizedY
+        ) - levelData.topOffset;
+
+        Vector3 spawnPosition = new Vector3(spawnX, spawnY, 0f);
 
         Instantiate(
             selectedHazard,

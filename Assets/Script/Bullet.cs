@@ -1,22 +1,27 @@
-
 using UnityEngine;
 
 public class Bullet : MonoBehaviour
 {
-    public float speed = 12f;
-    public float lifetime = 3f;
-    public int damage = 1;
+    [Header("Data")]
+    [SerializeField] private ProjectileStats stats;
 
     void Start()
     {
+        if (stats == null)
+        {
+            Debug.LogError("ProjectileStats is not assigned.", this);
+            enabled = false;
+            return;
+        }
+
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
 
         if (rb != null)
         {
-            rb.linearVelocity = transform.right * speed;
+            rb.linearVelocity = transform.right * stats.speed;
         }
 
-        Destroy(gameObject, lifetime);
+        Destroy(gameObject, stats.lifetime);
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -25,7 +30,7 @@ public class Bullet : MonoBehaviour
 
         if (boss != null)
         {
-            boss.TakeDamage(damage);
+            boss.TakeDamage(stats.damage);
             Destroy(gameObject);
         }
     }

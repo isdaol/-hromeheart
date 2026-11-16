@@ -1,4 +1,3 @@
-
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -6,10 +5,8 @@ using UnityEngine.UI;
 
 public class Health : MonoBehaviour
 {
-    [Header("Health")]
-    public int maxHealth = 3;
-    public float invincibilityDuration = 2f;
-    public float blinkInterval = 0.15f;
+    [Header("Data")]
+    [SerializeField] private PlayerStats stats;
 
     [Header("Heart UI")]
     public Image[] heartImages;
@@ -32,7 +29,14 @@ public class Health : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
 
-        currentHealth = maxHealth;
+        if (stats == null)
+        {
+            Debug.LogError("PlayerStats is not assigned.", this);
+            enabled = false;
+            return;
+        }
+
+        currentHealth = stats.maxHealth;
         UpdateHearts();
     }
 
@@ -43,7 +47,9 @@ public class Health : MonoBehaviour
 
         currentHealth = Mathf.Max(0, currentHealth - damage);
 
-        Debug.Log("HP: " + currentHealth + " / " + maxHealth);
+        Debug.Log(
+            "HP: " + currentHealth + " / " + stats.maxHealth
+        );
 
         if (audioSource != null && damageSound != null)
             audioSource.PlayOneShot(damageSound);
@@ -63,10 +69,12 @@ public class Health : MonoBehaviour
     {
         currentHealth = Mathf.Min(
             currentHealth + amount,
-            maxHealth
+            stats.maxHealth
         );
 
-        Debug.Log("HP restored: " + currentHealth + " / " + maxHealth);
+        Debug.Log(
+            "HP restored: " + currentHealth + " / " + stats.maxHealth
+        );
 
         UpdateHearts();
     }
@@ -91,13 +99,13 @@ public class Health : MonoBehaviour
         isInvincible = true;
         float elapsed = 0f;
 
-        while (elapsed < invincibilityDuration)
+        while (elapsed < stats.invincibilityDuration)
         {
             if (spriteRenderer != null)
                 spriteRenderer.enabled = !spriteRenderer.enabled;
 
-            yield return new WaitForSeconds(blinkInterval);
-            elapsed += blinkInterval;
+            yield return new WaitForSeconds(stats.blinkInterval);
+            elapsed += stats.blinkInterval;
         }
 
         if (spriteRenderer != null)

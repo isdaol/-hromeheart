@@ -2,12 +2,22 @@ using UnityEngine;
 
 public class ShooterProjectile : MonoBehaviour
 {
-    public int damage = 1;
-    public float lifetime = 5f;
+    [Header("Data")]
+    [SerializeField] private ProjectileStats stats;
 
     void Start()
     {
-        Destroy(gameObject, lifetime);
+        if (stats == null)
+        {
+            Debug.LogError(
+                "ProjectileStats is not assigned to ShooterProjectile.",
+                this
+            );
+            enabled = false;
+            return;
+        }
+
+        Destroy(gameObject, stats.lifetime);
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -22,7 +32,11 @@ public class ShooterProjectile : MonoBehaviour
 
     void HandleHit(GameObject target)
     {
+        if (stats == null)
+            return;
+
         Transform targetTransform = target.transform;
+
         if (!targetTransform.CompareTag("Player") &&
             !targetTransform.root.CompareTag("Player"))
         {
@@ -30,8 +44,9 @@ public class ShooterProjectile : MonoBehaviour
         }
 
         Health health = target.GetComponentInParent<Health>();
+
         if (health != null)
-            health.TakeDamage(damage);
+            health.TakeDamage(stats.damage);
 
         Destroy(gameObject);
     }

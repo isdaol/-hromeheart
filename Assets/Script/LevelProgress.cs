@@ -1,49 +1,108 @@
+using System;
 using UnityEngine;
 
-/// <summary>
-/// Progress shared by the level selector and the level completion trigger.
-/// Add each new gameplay scene to SceneNames in progression order.
-/// </summary>
 public static class LevelProgress
 {
-    const string UnlockedLevelsKey = "UnlockedLevelCount";
+    private static LevelData[] levels;
 
-    // Physics Game is the first playable level.
-    static readonly string[] SceneNames = { "Physics Game", "Level2", "Level3" };
+    public static void Configure(LevelData[] levelData)
+    {
+        levels = levelData;
+    }
 
-    public static int LevelCount => SceneNames.Length;
+    public static int LevelCount
+    {
+        get
+        {
+            return levels == null ? 0 : levels.Length;
+        }
+    }
+
+    public static LevelData GetLevelData(int levelIndex)
+    {
+        if (levels == null ||
+            levelIndex < 0 ||
+            levelIndex >= levels.Length)
+        {
+            return null;
+        }
+
+        return levels[levelIndex];
+    }
 
     public static string GetSceneName(int levelIndex)
     {
-        if (levelIndex < 0 || levelIndex >= SceneNames.Length)
-            return null;
-
-        return SceneNames[levelIndex];
+        LevelData level = GetLevelData(levelIndex);
+        return level != null ? level.sceneName : null;
     }
 
     public static string GetDisplayName(int levelIndex)
     {
+        LevelData level = GetLevelData(levelIndex);
+
+        if (level != null && !string.IsNullOrEmpty(level.displayName))
+            return level.displayName;
+
         return "Level " + (levelIndex + 1);
     }
 
     public static bool IsUnlocked(int levelIndex)
     {
-        return levelIndex >= 0 && levelIndex < SceneNames.Length &&
-            levelIndex < PlayerPrefs.GetInt(UnlockedLevelsKey, 1);
+        LevelData level = GetLevelData(levelIndex);
+        SaveManager saveManager = SaveManager.Instance;
+
+        if (level == null ||
+            saveManager == null ||
+            saveManager.Data == null)
+        {
+            return false;
+        }
+
+        return levelIndex < saveManager.Data.unlockedLevelCount;
     }
 
     public static void CompleteScene(string sceneName)
     {
-        int completedIndex = System.Array.IndexOf(SceneNames, sceneName);
+        if (levels == null || string.IsNullOrEmpty(sceneName))
+            return;
+
+        SaveManager saveManager = SaveManager.Instance;
+
+        if (saveManager == null || saveManager.Data == null)
+        {
+            Debug.LogError("SaveManager is not available.");
+            return;
+        }
+
+        int completedIndex = Array.FindIndex(
+            levels,
+            level => level != null && level.sceneName == sceneName
+        );
+
         if (completedIndex < 0)
             return;
 
-        int unlockedCount = PlayerPrefs.GetInt(UnlockedLevelsKey, 1);
-        int nextUnlockedCount = completedIndex + 2;
-        if (nextUnlockedCount > unlockedCount)
+        int nextUnlockedCount = Mathf.Min(
+            completedIndex + 2,
+            levels.Length
+        );
+
+        if (nextUnlockedCount > saveManager.Data.unlockedLevelCount)
         {
-            PlayerPrefs.SetInt(UnlockedLevelsKey, nextUnlockedCount);
-            PlayerPrefs.Save();
+            saveManager.Data.unlockedLevelCount = nextUnlockedCount;
         }
+
+        Player2D player =
+            UnityEngine.Object.FindAnyObjectByType<Player2D>();
+
+        if (player != null)
+        {
+            saveManager.Data.bestScore = Mathf.Max(
+                saveManager.Data.bestScore,
+                player.CurrentScore
+            );
+        }
+
+        saveManager.SaveNow();
     }
 }

@@ -194,5 +194,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2a5a6c9f8c44c91993b10f95c006b8f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShooterProjectile
-  damage: 1
-  lifetime: 5
+  stats: {fileID: 11400000, guid: d8b94ad8c572548b0b409de86c9cd824, type: 2}

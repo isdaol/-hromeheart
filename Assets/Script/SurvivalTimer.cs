@@ -1,10 +1,11 @@
-
 using UnityEngine;
 using TMPro;
 
 public class SurvivalTimer : MonoBehaviour
 {
-    public float survivalTime = 60f;
+    [Header("Level Data")]
+    public LevelData levelData;
+
     public TMP_Text timerText;
     public Animator portalAnimator;
 
@@ -13,7 +14,30 @@ public class SurvivalTimer : MonoBehaviour
 
     void Start()
     {
-        timeLeft = survivalTime;
+        if (levelData == null)
+        {
+            Debug.LogError("LevelData is not assigned.", this);
+            enabled = false;
+            return;
+        }
+
+        if (levelData.goalType != LevelGoalType.SurviveTimer)
+        {
+            enabled = false;
+            return;
+        }
+
+        if (levelData.survivalTime <= 0f)
+        {
+            Debug.LogError(
+                "Survival Timer goal requires a positive Survival Time.",
+                this
+            );
+            enabled = false;
+            return;
+        }
+
+        timeLeft = levelData.survivalTime;
         UpdateTimerText();
     }
 
@@ -38,20 +62,21 @@ public class SurvivalTimer : MonoBehaviour
 
     void UpdateTimerText()
     {
-        if (timerText != null)
-        {
-            int seconds = Mathf.CeilToInt(timeLeft);
-            timerText.text = "Time: " + seconds;
-        }
+        if (timerText == null)
+            return;
+
+        int seconds = Mathf.CeilToInt(timeLeft);
+        timerText.text = "Time: " + seconds;
     }
 
     void OpenPortal()
     {
         if (portalAnimator != null)
-        {
             portalAnimator.SetBool("IsOpen", true);
-        }
 
-        Debug.Log("60 seconds survived! Portal opened.");
+        Debug.Log(
+            levelData.survivalTime +
+            " seconds survived! Portal opened."
+        );
     }
 }

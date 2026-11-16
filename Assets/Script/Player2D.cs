@@ -1,17 +1,14 @@
-
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
 
 public class Player2D : MonoBehaviour
 {
-    public float speed = 7f;
-    public float jumpForce = 12f;
+    [Header("Data")]
+    [SerializeField] private PlayerStats stats;
 
     [Header("Shooting")]
     public GameObject bulletPrefab;
-    public float shootCooldown = 0.3f;
-    public float bulletOffset = 0.6f;
     public AudioClip shootSound;
     public AudioClip coinSound;
     public GameObject victoryOverlay;
@@ -27,6 +24,8 @@ public class Player2D : MonoBehaviour
     private int coins;
     private int coinsTotal;
 
+    public int CurrentScore => coins;
+
     private Vector2 moveInput;
     private bool jumpRequested;
     private bool fireRequested;
@@ -36,6 +35,13 @@ public class Player2D : MonoBehaviour
 
     void Awake()
     {
+        if (stats == null)
+        {
+            Debug.LogError("PlayerStats is not assigned.", this);
+            enabled = false;
+            return;
+        }
+
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -48,19 +54,16 @@ public class Player2D : MonoBehaviour
         Debug.Log("Coins in this level: " + coinsTotal);
     }
 
-    // Вызывается PlayerInput для действия Move
     public void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
     }
 
-    // Вызывается PlayerInput для действия Jump
     public void OnJump()
     {
         jumpRequested = true;
     }
 
-    // Вызывается PlayerInput для действия Fire
     public void OnFire()
     {
         fireRequested = true;
@@ -82,7 +85,7 @@ public class Player2D : MonoBehaviour
         {
             rb.linearVelocity = new Vector2(
                 rb.linearVelocity.x,
-                jumpForce
+                stats.jumpForce
             );
 
             onGround = false;
@@ -92,9 +95,7 @@ public class Player2D : MonoBehaviour
         jumpRequested = false;
 
         if (fireRequested && Time.time >= nextShotTime)
-        {
             Shoot();
-        }
 
         fireRequested = false;
 
@@ -115,7 +116,7 @@ public class Player2D : MonoBehaviour
         float x = moveInput.x;
 
         rb.linearVelocity = new Vector2(
-            x * speed,
+            x * stats.speed,
             rb.linearVelocity.y
         );
 
@@ -137,7 +138,7 @@ public class Player2D : MonoBehaviour
             : Vector3.right;
 
         Vector3 spawnPosition =
-            transform.position + direction * bulletOffset;
+            transform.position + direction * stats.bulletOffset;
 
         Quaternion rotation = facingLeft
             ? Quaternion.Euler(0f, 0f, 180f)
@@ -148,7 +149,7 @@ public class Player2D : MonoBehaviour
         if (audioSource != null && shootSound != null)
             audioSource.PlayOneShot(shootSound);
 
-        nextShotTime = Time.time + shootCooldown;
+        nextShotTime = Time.time + stats.shootCooldown;
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -176,10 +177,14 @@ public class Player2D : MonoBehaviour
                 if (portalAnimator != null)
                     portalAnimator.SetBool("IsOpen", true);
 
+                if (SceneManager.GetActiveScene().name == "Level4")
+                {
+                    ShowVictory();
+                    return;
+                }
+
                 portalOpened = true;
 
-                // The first contact opens the portal. The player must leave
-                // and enter it again to count as passing through it.
                 if (exitedPortalAfterOpening)
                     ShowVictory();
             }
@@ -205,11 +210,16 @@ public class Player2D : MonoBehaviour
             return;
 
         completingLevel = true;
-        LevelProgress.CompleteScene(SceneManager.GetActiveScene().name);
+
+        LevelProgress.CompleteScene(
+            SceneManager.GetActiveScene().name
+        );
 
         if (victoryOverlay == null)
         {
-            Debug.LogError("Cannot show victory screen: VictoryOverlay is not assigned.");
+            Debug.LogError(
+                "Cannot show victory screen: VictoryOverlay is not assigned."
+            );
             completingLevel = false;
             return;
         }

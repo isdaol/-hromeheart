@@ -1,25 +1,30 @@
-
 using UnityEngine;
 
 public class Hazard : MonoBehaviour
 {
-    public float fallSpeed = 3f;
-    public int damage = 1;
+    [Header("Data")]
+    [SerializeField] protected HazardStats stats;
 
     protected virtual void Start()
     {
+        if (stats == null)
+        {
+            Debug.LogError("HazardStats is not assigned.", this);
+            enabled = false;
+            return;
+        }
+
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
 
         if (rb != null)
         {
             rb.gravityScale = 0f;
-            rb.linearVelocity = Vector2.down * fallSpeed;
+            rb.linearVelocity = Vector2.down * stats.fallSpeed;
         }
     }
 
     protected virtual void OnTriggerEnter2D(Collider2D other)
     {
-        // Bullet destroys the hazard
         if (other.CompareTag("Bullet"))
         {
             Destroy(other.gameObject);
@@ -27,15 +32,12 @@ public class Hazard : MonoBehaviour
             return;
         }
 
-        // Heart and other trigger objects can interact with Player
         if (other.CompareTag("Player"))
         {
             Health health = other.GetComponent<Health>();
 
             if (health != null)
-            {
-                health.TakeDamage(damage);
-            }
+                health.TakeDamage(stats.damage);
 
             Destroy(gameObject);
         }
@@ -48,16 +50,12 @@ public class Hazard : MonoBehaviour
             Health health = collision.gameObject.GetComponent<Health>();
 
             if (health != null)
-            {
-                health.TakeDamage(damage);
-            }
+                health.TakeDamage(stats.damage);
 
             Destroy(gameObject);
         }
 
         if (collision.gameObject.CompareTag("Ground"))
-        {
             Destroy(gameObject);
-        }
     }
 }
