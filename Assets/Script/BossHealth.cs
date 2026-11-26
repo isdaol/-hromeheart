@@ -46,6 +46,7 @@ public class BossHealth : MonoBehaviour
             {
                 victoryOverlay.SetActive(true);
                 Time.timeScale = 0f;
+                GameSounds.PlayVictory();
             }
             else
             {
@@ -71,9 +72,7 @@ public class BossHealth : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Player"))
         {
-            SceneManager.LoadScene(
-                SceneManager.GetActiveScene().name
-            );
+            GameSounds.RestartAfterDefeat();
         }
     }
 }

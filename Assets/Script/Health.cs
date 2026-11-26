@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class Health : MonoBehaviour
@@ -20,14 +19,12 @@ public class Health : MonoBehaviour
     private bool isInvincible;
 
     private SpriteRenderer spriteRenderer;
-    private AudioSource audioSource;
 
     public int CurrentHealth => currentHealth;
 
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
-        audioSource = GetComponent<AudioSource>();
 
         if (stats == null)
         {
@@ -51,9 +48,6 @@ public class Health : MonoBehaviour
             "HP: " + currentHealth + " / " + stats.maxHealth
         );
 
-        if (audioSource != null && damageSound != null)
-            audioSource.PlayOneShot(damageSound);
-
         UpdateHearts();
 
         if (currentHealth <= 0)
@@ -62,6 +56,7 @@ public class Health : MonoBehaviour
             return;
         }
 
+        GameSounds.PlayGameplayEffect(damageSound);
         StartCoroutine(InvincibilityCoroutine());
     }
 
@@ -118,8 +113,6 @@ public class Health : MonoBehaviour
     {
         Debug.Log("Game Over! Restarting level.");
 
-        SceneManager.LoadScene(
-            SceneManager.GetActiveScene().name
-        );
+        GameSounds.RestartAfterDefeat();
     }
 }

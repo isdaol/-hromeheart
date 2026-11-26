@@ -1,20 +1,41 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class BackgroundMusic : MonoBehaviour
 {
     private static BackgroundMusic instance;
-    private AudioSource source;
+    private const string MenuScene = "Main menu";
+    private const float FadeSeconds = 1f;
+    private AudioSource menuTrack;
+    private AudioSource levelTrack;
+    private float levelMix;
+    private float volume = 1f;
+    private bool musicEnabled = true;
+    private bool playingLevel;
+    private bool mixerControlsVolume;
 
-    public static void EnsurePlaying(AudioClip clip)
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void StartInGameplayScene()
+    {
+        if (SceneManager.GetActiveScene().buildIndex > 0)
+            EnsurePlaying(null);
+    }
+
+    public static void EnsurePlaying(AudioClip menuClip)
     {
         if (instance != null)
+        {
+            if (menuClip != null && instance.menuTrack.clip == null)
+                instance.menuTrack.clip = menuClip;
+
             return;
+        }
 
         GameObject musicObject = new GameObject("Background Music");
         BackgroundMusic music =
             musicObject.AddComponent<BackgroundMusic>();
 
-        music.Initialize(clip);
+        music.Initialize(menuClip);
     }
 
     void Awake()
@@ -27,43 +48,94 @@ public class BackgroundMusic : MonoBehaviour
 
         instance = this;
         DontDestroyOnLoad(gameObject);
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
-    void Initialize(AudioClip clip)
+    private void Start()
     {
-        source = gameObject.AddComponent<AudioSource>();
+        ApplySettings(musicEnabled, volume);
+    }
+
+    private void Initialize(AudioClip menuClip)
+    {
+        menuTrack = CreateTrack(menuClip);
+        levelTrack = CreateTrack(GameSounds.LoadClip("specular-city"));
+
+        SaveData save = SaveManager.Instance != null ? SaveManager.Instance.Data : null;
+        if (save != null)
+        {
+            volume = Mathf.Clamp01(save.musicVolume);
+            musicEnabled = save.musicEnabled;
+        }
+
+        playingLevel = menuClip == null;
+        levelMix = playingLevel ? 1f : 0f;
+        ApplyMix();
+        StartTrack(playingLevel ? levelTrack : menuTrack);
+    }
+
+    private AudioSource CreateTrack(AudioClip clip)
+    {
+        AudioSource source = gameObject.AddComponent<AudioSource>();
         source.clip = clip;
         source.loop = true;
         source.playOnAwake = false;
+        source.spatialBlend = 0f;
+        source.outputAudioMixerGroup = GameSounds.MusicOutput;
+        return source;
+    }
 
-        SaveManager saveManager = SaveManager.Instance;
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (mode != LoadSceneMode.Single)
+            return;
 
-        if (saveManager != null && saveManager.Data != null)
-        {
-            source.volume = Mathf.Clamp01(
-                saveManager.Data.musicVolume
-            );
-            source.mute = !saveManager.Data.musicEnabled;
-        }
-        else
-        {
-            source.volume = 1f;
-            source.mute = false;
-        }
+        bool isLevel = scene.name != MenuScene;
+        AudioSource nextTrack = isLevel ? levelTrack : menuTrack;
+        if (nextTrack.clip == null)
+            return;
 
-        if (clip != null)
+        playingLevel = isLevel;
+        StartTrack(nextTrack);
+    }
+
+    private static void StartTrack(AudioSource source)
+    {
+        if (source.clip != null && !source.isPlaying)
             source.Play();
-        else
-            Debug.LogError("Background music clip is not assigned.");
+    }
+
+    private void Update()
+    {
+        float target = playingLevel ? 1f : 0f;
+        if (levelMix == target)
+            return;
+
+        levelMix = Mathf.MoveTowards(levelMix, target, Time.unscaledDeltaTime / FadeSeconds);
+        ApplyMix();
+
+        if (levelMix == target)
+            (playingLevel ? menuTrack : levelTrack).Stop();
+    }
+
+    private void ApplyMix()
+    {
+        float trackGain = mixerControlsVolume ? 1f : volume;
+        menuTrack.volume = trackGain * (1f - levelMix);
+        levelTrack.volume = trackGain * levelMix;
+        menuTrack.mute = !musicEnabled || volume == 0f;
+        levelTrack.mute = !musicEnabled || volume == 0f;
     }
 
     public static void ApplySettings(bool musicEnabled, float volume)
     {
-        if (instance == null || instance.source == null)
+        if (instance == null)
             return;
 
-        instance.source.mute = !musicEnabled;
-        instance.source.volume = Mathf.Clamp01(volume);
+        instance.musicEnabled = musicEnabled;
+        instance.volume = Mathf.Clamp01(volume);
+        instance.mixerControlsVolume = GameSounds.ApplyMusicVolume(instance.volume);
+        instance.ApplyMix();
     }
 
     public static void SetMusicEnabled(bool isEnabled)
@@ -79,8 +151,7 @@ public class BackgroundMusic : MonoBehaviour
         saveManager.Data.musicEnabled = isEnabled;
         saveManager.SaveNow();
 
-        if (instance != null && instance.source != null)
-            instance.source.mute = !isEnabled;
+        ApplySettings(isEnabled, saveManager.Data.musicVolume);
     }
 
     public static void SetVolume(float volume)
@@ -97,12 +168,13 @@ public class BackgroundMusic : MonoBehaviour
         saveManager.Data.musicVolume = clampedVolume;
         saveManager.SaveNow();
 
-        if (instance != null && instance.source != null)
-            instance.source.volume = clampedVolume;
+        ApplySettings(saveManager.Data.musicEnabled, clampedVolume);
     }
 
     void OnDestroy()
     {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+
         if (instance == this)
             instance = null;
     }

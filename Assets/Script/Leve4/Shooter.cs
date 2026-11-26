@@ -68,6 +68,9 @@ public class Shooter : MonoBehaviour
 
     void Update()
     {
+        if (Time.timeScale == 0f)
+            return;
+
         if (player == null)
         {
             GameObject playerObject =
@@ -110,8 +113,8 @@ public class Shooter : MonoBehaviour
 
                 if (shootTimer <= 0f)
                 {
-                    if (targetVisible)
-                        currentState = State.Aim;
+                    if (targetVisible && IsOnScreen())
+                        StartAiming();
                     else
                         ReturnToIdle();
                 }
@@ -162,6 +165,7 @@ public class Shooter : MonoBehaviour
     {
         currentState = State.Aim;
         aimTimer = stats.aimTime;
+        GameSounds.WarnShot();
 
         FacePlayer();
     }

@@ -17,7 +17,7 @@ public class HeartHazard : Hazard
 
                 if (collectSound != null)
                 {
-                    AudioSource.PlayClipAtPoint(
+                    GameSounds.PlayEffectAt(
                         collectSound,
                         transform.position,
                         stats.soundVolume

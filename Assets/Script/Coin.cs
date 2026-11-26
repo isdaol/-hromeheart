@@ -11,13 +11,7 @@ public class Coin : MonoBehaviour
             if (coinSound != null)
             {
                 Debug.Log("Звук монетки запускается!");
-                GameObject soundObject = new GameObject("CoinSound");
-                AudioSource audioSource = soundObject.AddComponent<AudioSource>();
-
-                audioSource.clip = coinSound;
-                audioSource.Play();
-
-                Destroy(soundObject, coinSound.length);
+                GameSounds.PlayGameplayEffect(coinSound);
             }
 
             Destroy(gameObject);

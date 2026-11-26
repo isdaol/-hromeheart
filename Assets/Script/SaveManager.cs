@@ -58,10 +58,10 @@ public class SaveManager : MonoBehaviour
         try
         {
             string json = File.ReadAllText(SaveFilePath);
-            SaveData loadedData = JsonUtility.FromJson<SaveData>(json);
+            SaveData loadedData = new SaveData();
+            JsonUtility.FromJsonOverwrite(json, loadedData);
 
-            if (loadedData == null ||
-                loadedData.version != CurrentVersion)
+            if (loadedData.version != CurrentVersion)
             {
                 Debug.LogWarning(
                     "Save file is empty or has an unsupported version. " +
@@ -187,5 +187,6 @@ public class SaveManager : MonoBehaviour
         Data.unlockedLevelCount = Mathf.Max(1, Data.unlockedLevelCount);
         Data.playerColor = Mathf.Clamp(Data.playerColor, 0, 2);
         Data.musicVolume = Mathf.Clamp01(Data.musicVolume);
+        Data.sfxVolume = Mathf.Clamp01(Data.sfxVolume);
     }
 }

@@ -12,4 +12,5 @@ public class SaveData
     public bool fullscreen;
     public bool musicEnabled;
     public float musicVolume;
+    public float sfxVolume = 1f;
 }

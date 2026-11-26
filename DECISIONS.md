@@ -13,3 +13,11 @@
 - 2026-11-16 I kept the survival timer on Level 2; the other levels use coin collection as their goal.
 - 2026-11-16 I tested a malformed save file. The game loaded default data without crashing and wrote a new save.json.
 - 2026-11-16 After returning to the main menu, ResetButton could target a destroyed duplicate SaveManager. I changed it to use SaveManager.Instance through MenuButtons and confirmed the reset works.
+
+## Week 13 — Assignment 12
+
+- 2026-11-24 I asked Codex to check which clips were already in the game and find the missing effects and a separate music track for the levels.
+- 2026-11-24 The original enemy warning clips were longer than the wind-up. I kept short versions so players hear the cue before the attack.
+- 2026-11-24 Codex first set the death cue to 0.8 seconds. I asked to shorten it to 0.2 seconds so the game restarts sooner.
+- 2026-11-24 I made the Music and SFX sliders in Unity and asked Codex to connect them to separate mixer groups and save both values.
+- 2026-11-24 I asked Codex to soften the music on pause and vary the pitch of repeated effects. The pause snapshot changes a separate group so it preserves the user's volume setting.

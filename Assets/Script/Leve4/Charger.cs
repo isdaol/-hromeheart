@@ -71,6 +71,9 @@ public class Charger : MonoBehaviour
 
     void Update()
     {
+        if (Time.timeScale == 0f)
+            return;
+
         if (player == null)
         {
             GameObject playerObject =
@@ -410,6 +413,7 @@ public class Charger : MonoBehaviour
     {
         currentState = State.WindUp;
         stateTimer = stats.windUpTime;
+        GameSounds.WarnCharge();
 
         FacePlayer();
     }

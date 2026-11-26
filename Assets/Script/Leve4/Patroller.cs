@@ -50,6 +50,9 @@ public class Patroller : MonoBehaviour
 
     void Update()
     {
+        if (Time.timeScale == 0f)
+            return;
+
         ResolvePlayerReference();
 
         if (player == null)
@@ -255,6 +258,7 @@ public class Patroller : MonoBehaviour
         currentState = State.AttackWindUp;
         stateTimer = stats.windUpTime;
         moveDirection = 0f;
+        GameSounds.WarnCharge();
 
         FaceDirection(
             Mathf.Sign(player.position.x - transform.position.x)
