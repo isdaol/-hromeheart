@@ -35,6 +35,7 @@ public class BombHazard : Hazard
                 rb.bodyType = RigidbodyType2D.Kinematic;
             }
 
+            GameSounds.WarnShot();
             Invoke(nameof(Explode), stats.explosionDelay);
         }
     }

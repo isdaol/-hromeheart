@@ -18,7 +18,6 @@ public class Player2D : MonoBehaviour
     private Rigidbody2D rb;
     private Animator animator;
     private SpriteRenderer spriteRenderer;
-    private AudioSource audioSource;
 
     private bool onGround;
     private int coins;
@@ -45,7 +44,6 @@ public class Player2D : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
-        audioSource = GetComponent<AudioSource>();
     }
 
     void Start()
@@ -71,7 +69,7 @@ public class Player2D : MonoBehaviour
 
     void Update()
     {
-        if (completingLevel)
+        if (completingLevel || Time.timeScale == 0f)
             return;
 
         float x = moveInput.x;
@@ -90,6 +88,7 @@ public class Player2D : MonoBehaviour
 
             onGround = false;
             animator.SetBool("IsJumping", true);
+            GameSounds.PlayJump();
         }
 
         jumpRequested = false;
@@ -102,9 +101,7 @@ public class Player2D : MonoBehaviour
         if (transform.position.y < -6f)
         {
             Debug.Log("Player fell!");
-            SceneManager.LoadScene(
-                SceneManager.GetActiveScene().name
-            );
+            GameSounds.RestartAfterDefeat();
         }
     }
 
@@ -146,8 +143,7 @@ public class Player2D : MonoBehaviour
 
         Instantiate(bulletPrefab, spawnPosition, rotation);
 
-        if (audioSource != null && shootSound != null)
-            audioSource.PlayOneShot(shootSound);
+        GameSounds.PlayGameplayEffect(shootSound);
 
         nextShotTime = Time.time + stats.shootCooldown;
     }
@@ -156,8 +152,7 @@ public class Player2D : MonoBehaviour
     {
         if (other.CompareTag("Coin"))
         {
-            if (audioSource != null && coinSound != null)
-                audioSource.PlayOneShot(coinSound);
+            GameSounds.PlayGameplayEffect(coinSound);
 
             Destroy(other.gameObject);
             coins++;
@@ -226,6 +221,7 @@ public class Player2D : MonoBehaviour
 
         Time.timeScale = 0f;
         victoryOverlay.SetActive(true);
+        GameSounds.PlayVictory();
     }
 
     public void ReturnToMainMenu()
@@ -245,17 +241,13 @@ public class Player2D : MonoBehaviour
         if (other.gameObject.CompareTag("Enemy"))
         {
             Debug.Log("Game over");
-            SceneManager.LoadScene(
-                SceneManager.GetActiveScene().name
-            );
+            GameSounds.RestartAfterDefeat();
         }
 
         if (other.gameObject.CompareTag("Spikes"))
         {
             Debug.Log("You hit the spikes!");
-            SceneManager.LoadScene(
-                SceneManager.GetActiveScene().name
-            );
+            GameSounds.RestartAfterDefeat();
         }
     }
 }

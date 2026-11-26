@@ -12,6 +12,7 @@ public class ProfileSettings : MonoBehaviour
 
     public AudioSource bgSound;
     public Slider volumeSlider;
+    public Slider sfxVolumeSlider;
 
     public void SaveName(string value)
     {
@@ -61,6 +62,11 @@ public class ProfileSettings : MonoBehaviour
         BackgroundMusic.SetVolume(value);
     }
 
+    public void SetSfxVolume(float value)
+    {
+        GameSounds.SetSfxVolume(value);
+    }
+
     void Start()
     {
         SaveManager saveManager = GetSaveManager();
@@ -92,6 +98,9 @@ public class ProfileSettings : MonoBehaviour
 
         if (volumeSlider != null)
             volumeSlider.SetValueWithoutNotify(data.musicVolume);
+
+        if (sfxVolumeSlider != null)
+            sfxVolumeSlider.SetValueWithoutNotify(data.sfxVolume);
 
         Screen.fullScreen = data.fullscreen;
 

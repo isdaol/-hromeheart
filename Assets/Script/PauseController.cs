@@ -29,11 +29,13 @@ public class PauseController : MonoBehaviour
         if (pauseButton != null)
             pauseButton.SetActive(false);
         Time.timeScale = 0f;
+        GameSounds.SetPaused(true);
     }
 
     public void Resume()
     {
         Time.timeScale = 1f;
+        GameSounds.SetPaused(false);
 
         if (pauseOverlay != null)
             pauseOverlay.SetActive(false);
@@ -45,12 +47,14 @@ public class PauseController : MonoBehaviour
     public void Restart()
     {
         Time.timeScale = 1f;
+        GameSounds.SetPaused(false);
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void ReturnToMenu()
     {
         Time.timeScale = 1f;
+        GameSounds.SetPaused(false);
         SceneManager.LoadScene("Main menu");
     }
 }

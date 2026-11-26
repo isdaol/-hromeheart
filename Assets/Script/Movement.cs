@@ -12,14 +12,11 @@ public class Movement : MonoBehaviour
     public int totalCoins = 1;
 
     public AudioClip coinSound;
-    private AudioSource audioSource;
 
     private int coins = 0;
 
     void Start()
     {
-        audioSource = GetComponent<AudioSource>();
-
         // Скрываем надпись о победе в начале игры
         winText.gameObject.SetActive(false);
     }
@@ -51,10 +48,7 @@ public class Movement : MonoBehaviour
         if (coin.CompareTag("Coin"))
         {
             // Воспроизводим звук
-            if (coinSound != null && audioSource != null)
-            {
-                audioSource.PlayOneShot(coinSound);
-            }
+            GameSounds.PlayGameplayEffect(coinSound);
 
             // Удаляем монетку
             Destroy(coin.gameObject);

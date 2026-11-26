@@ -11,6 +11,7 @@ public class BossShooter : MonoBehaviour
     public Transform firePoint;
 
     private float timer;
+    private bool warningPlayed;
 
     void Start()
     {
@@ -23,15 +24,26 @@ public class BossShooter : MonoBehaviour
 
     void Update()
     {
-        if (player == null || projectilePrefab == null)
+        if (Time.timeScale == 0f || player == null || projectilePrefab == null)
             return;
 
         timer += Time.deltaTime;
+
+        float windUpTime = Mathf.Min(0.6f, stats.fireInterval / 2f);
+        float warningStart = stats.fireInterval - windUpTime;
+        if (!warningPlayed && timer >= warningStart)
+        {
+            timer = warningStart;
+            warningPlayed = true;
+            GameSounds.WarnShot();
+            return;
+        }
 
         if (timer >= stats.fireInterval)
         {
             Shoot();
             timer = 0f;
+            warningPlayed = false;
         }
     }
 
